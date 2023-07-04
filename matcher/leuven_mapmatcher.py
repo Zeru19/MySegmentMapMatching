@@ -55,7 +55,6 @@ class LeuvenMatcher(Matcher):
         if not len(trip[trip['obs_ne'] == 0]) == len(timestamps):
             # lengths of traj and matched traj do not match
             # raise ValueError("A unknown error occurs.")
-            print(len(trip[trip['obs_ne'] == 0]), len(timestamps))
             return nodes, None
         trip.loc[trip['obs_ne'] == 0, 'timestamp'] = timestamps
         trip['timestamp'] = trip['timestamp'].interpolate()  # inter- and extra- polate timestamp
@@ -70,7 +69,8 @@ class LeuvenMatcher(Matcher):
         road_prop = [haversine(lon1, lat1, lon2, lat2) / l 
                              for lon1, lat1, lon2, lat2, l in zip(trip['longitude'], trip['latitude'], trip['longitude_o'], trip['latitude_o'], trip['length'])]
         trip['road_prop'] = np.clip(road_prop, 0, 1)
-        trip = trip[['road', 'obs', 'obs_ne', 'timestamp', 'longitude', 'latitude', 'road_prop']]
+        trip['timestamp'] = pd.to_datetime(trip['timestamp'], unit='s')
+        trip = trip[['road', 'obs', 'obs_ne', 'timestamp', 'longitude', 'latitude', 'length', 'road_prop']]
 
         return nodes, trip
 

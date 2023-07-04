@@ -1,5 +1,7 @@
 import math
 
+import numpy as np
+
 pi = 3.1415926535897932384626
 a = 6378245.0
 ee = 0.00669342162296594323
@@ -66,3 +68,28 @@ def haversine(lon1, lat1, lon2, lat2):  # 经度1，纬度1，经度2，纬度2 
     c = 2 * asin(sqrt(a))
     r = 6371  # 地球平均半径，单位为公里
     return c * r * 1000
+
+
+def traj_iter(data_dir='../data/', filenames=['small_chengdu.csv']):
+    """
+    Trajectory data iterator
+    """
+    traj_path = data_dir
+    for i, file in enumerate(filenames):
+        with open(traj_path + file) as fp:
+            line = fp.readline()
+            while line:
+                cols = line.split(',')
+                user_id = cols[0]
+                driver_id = cols[1]
+                traj = cols[2:]
+                traj[0] = traj[0][2:]
+                traj[-1] = traj[-1][:-3]
+                traj = traj[1::2] + traj[-1:]
+
+                traj_array = np.array([list(p.strip().split(' ')) for p in traj]).astype(float)
+                # timestamps = [traj_array[j, -1] for j in range(traj_array.shape[0])]
+                # path = [tuple(traj_array[j, :2]) for j in range(traj_array.shape[0])]
+                path = [tuple(traj_array[j, :]) for j in range(traj_array.shape[0])]
+                line = fp.readline()
+                yield path, driver_id

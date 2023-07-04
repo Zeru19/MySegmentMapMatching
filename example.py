@@ -1,34 +1,8 @@
 import os
 import pickle
 
-import numpy as np
-
 from matcher.leuven_mapmatcher import LeuvenMatcher
-
-
-def traj_iter(data_dir='../data/'):
-    """
-    Trajectory data iterator
-    """
-    traj_path = data_dir
-    for i, file in enumerate(['small_chengdu.csv']):
-        with open(traj_path + file) as fp:
-            line = fp.readline()
-            while line:
-                cols = line.split(',')
-                user_id = cols[0]
-                driver_id = cols[1]
-                traj = cols[2:]
-                traj[0] = traj[0][2:]
-                traj[-1] = traj[-1][:-3]
-                traj = traj[1::2] + traj[-1:]
-
-                traj_array = np.array([list(p.strip().split(' ')) for p in traj]).astype(float)
-                # timestamps = [traj_array[j, -1] for j in range(traj_array.shape[0])]
-                # path = [tuple(traj_array[j, :2]) for j in range(traj_array.shape[0])]
-                path = [tuple(traj_array[j, :]) for j in range(traj_array.shape[0])]
-                line = fp.readline()
-                yield path
+from utils import traj_iter
 
 
 city = 'chengdu'

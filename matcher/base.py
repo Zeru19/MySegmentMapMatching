@@ -78,7 +78,7 @@ class Matcher:
         edge_info = pd.merge(edge_info, self.node_info, left_on='d', right_on='osm_id', how='left', suffixes=('_o', '_d'))
         edge_info['longitude'] = (edge_info['longitude_o'] + edge_info['longitude_d']) / 2
         edge_info['latitude'] = (edge_info['latitude_o'] + edge_info['latitude_d']) / 2
-        self.edge_info = edge_info[['edge', 'edge_name', 'o', 'd', 'length', 'highway', 'longitude', 'latitude', 'o', 'longitude_o', 'latitude_o']]
+        self.edge_info = edge_info[['edge', 'edge_name', 'o', 'd', 'length', 'highway', 'longitude', 'latitude', 'longitude_o', 'latitude_o']]
 
         self.edge_id_map = {}
         for edge_name, edge_id in zip(self.edge_info['edge_name'], self.edge_info['edge']):
