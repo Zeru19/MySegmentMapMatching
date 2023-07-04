@@ -4,6 +4,7 @@ import abc
 
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
+import pandas as pd
 
 from utils import gcj2wgs
 
@@ -22,13 +23,66 @@ class Matcher:
         super().__init__()
 
         self.name = f"{name}-mapmatcher"
-        self.G = graph
+        self._load_graph(graph)
         self.bgimg = bgimg
         self.extent = extent
+
         self.matcher = None
 
     def __call__(self, *args, **kwds):
         return self.match_traj(*args, **kwds)
+    
+    def _load_graph(self, graph):
+        self.G = graph
+
+        node_info = []
+        for node, info in self.G.nodes.items():
+            # street_count: Count how many physical street segments connect to each node in a graph.
+            node_info.append([node, info['y'], info['x'], info['street_count']])
+        node_info = pd.DataFrame(node_info, columns=['osm_id', 'latitude', 'longitude', 'street_count'])
+        node_info['node'] = list(range(len(node_info)))
+        self.node_info = node_info
+
+        self.node_id_map = {}
+        for osm_id, node_id in zip(self.node_info['osm_id'], self.node_info['node']):
+            self.node_id_map[osm_id] = node_id
+
+        edge_info = []
+        existed_edges = []
+        for edge, info in self.G.edges.items():
+            edge_name = '-'.join([str(edge[0]), str(edge[1])])
+            if edge_name not in existed_edges:
+                edge_info.append([
+                    edge_name,
+                    edge[0],
+                    edge[1],
+                    info['length'],
+                    info.get('highway', 'unclassified')
+                ])
+                existed_edges.append(edge_name)
+            
+            edge_name = '-'.join([str(edge[1]), str(edge[0])])
+            # if not info['oneway'] and edge_name not in existed_edges:
+            if edge_name not in existed_edges:  # regard as undirected graph
+                edge_info.append([
+                    edge_name,
+                    edge[1],
+                    edge[0],
+                    info['length'],
+                    info.get('highway', 'unclassified')
+                ])
+                existed_edges.append(edge_name)
+        edge_info = pd.DataFrame(edge_info, columns=['edge_name', 'o', 'd', 'length', 'highway'])
+        edge_info['edge'] = list(range(len(edge_info)))
+        edge_info = pd.merge(edge_info, self.node_info, left_on='o', right_on='osm_id', how='left')
+        edge_info = pd.merge(edge_info, self.node_info, left_on='d', right_on='osm_id', how='left', suffixes=('_o', '_d'))
+        edge_info['longitude'] = (edge_info['longitude_o'] + edge_info['longitude_d']) / 2
+        edge_info['latitude'] = (edge_info['latitude_o'] + edge_info['latitude_d']) / 2
+        self.edge_info = edge_info[['edge', 'edge_name', 'o', 'd', 'length', 'highway', 'longitude', 'latitude', 'o', 'longitude_o', 'latitude_o']]
+
+        self.edge_id_map = {}
+        for edge_name, edge_id in zip(self.edge_info['edge_name'], self.edge_info['edge']):
+            self.edge_id_map[edge_name] = edge_id
 
     @abc.abstractmethod
     def init_matcher(self):
