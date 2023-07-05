@@ -65,6 +65,7 @@ class LeuvenMatcher(Matcher):
         trip.loc[trip['obs_ne'] != 0, ['longitude', 'latitude']] = trip_ne[['longitude', 'latitude']].values
 
         # road prop is NOT CORRECT
+        # TODO: CORRECT THE ROAD PROP CALCULATING
         trip = pd.merge(trip, self.edge_info[['edge_name', 'length', 'longitude_o', 'latitude_o']], left_on='road', right_on='edge_name', how='left')
         road_prop = [haversine(lon1, lat1, lon2, lat2) / l 
                              for lon1, lat1, lon2, lat2, l in zip(trip['longitude'], trip['latitude'], trip['longitude_o'], trip['latitude_o'], trip['length'])]
