@@ -21,6 +21,7 @@ g = pickle.load(open('data/chengdu_graph.pkl', 'rb'))
 matcher = LeuvenMatcher(city, graph=g, bgimg='data/chengdu_bound.jpg', extent=[104.0421, 104.1291, 30.6528, 30.7265])
 matcher.init_matcher()
 
+num_part = 0
 num_dump = 0
 trips = []
 trip_info = []
@@ -33,22 +34,27 @@ for trip, driver_id in traj_iter(traj_path, ['chengdushi_1001_1010.csv']):
         trips.append(res_traj)
 
         trip_info.append([num_dump, res_traj['timestamp'].min(), res_traj['timestamp'].max(),
-                          res_traj['length'].sum(), driver_id])
+                          res_traj.loc[~res_traj['road'].duplicated(), 'length'].sum() / 1000, driver_id])
 
         num_dump += 1
+        
+    if num_dump % 10000 == 0:
+        trips = pd.concat(trips)
+        trip_info = pd.DataFrame(trip_info, columns=['trip', 'start', 'end', 'length', 'driver'])
+        road_info = matcher.edge_info
 
-    if num_dump > 99999:
-    # if num_dump > 9:
-        break
+        trips.to_hdf('exports/chengdu%02d_part%02d.h5' % (1, num_part), key='trips')
+        trip_info.to_hdf('exports/chengdu%02d_part%02d.h5' % (1, num_part), key='trip_info')
+        road_info.to_hdf('exports/chengdu%02d_part%02d.h5' % (1, num_part), key='road_info')
 
-trips = pd.concat(trips)
-trip_info = pd.DataFrame(trip_info, columns=['trip', 'start', 'end', 'length', 'driver'])
-road_info = matcher.edge_info
+        num_part += 1
+        trips = []
+        trip_info = []
 
 # trips.to_hdf('exports/small_chengdu.h5', key='trips')
 # trip_info.to_hdf('exports/small_chengdu.h5', key='trip_info')
 # road_info.to_hdf('exports/small_chengdu.h5', key='road_info')
 
-trips.to_hdf('exports/chengdu.h5', key='trips')
-trip_info.to_hdf('exports/chengdu.h5', key='trip_info')
-road_info.to_hdf('exports/chengdu.h5', key='road_info')
+trips.to_hdf('exports/chengdu%02d_part%02d.h5' % (1, num_part), key='trips')
+trip_info.to_hdf('exports/chengdu%02d_part%02d.h5' % (1, num_part), key='trip_info')
+road_info.to_hdf('exports/chengdu%02d_part%02d.h5' % (1, num_part), key='road_info')
