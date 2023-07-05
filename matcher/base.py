@@ -5,25 +5,26 @@ import abc
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import pandas as pd
+import osmnx as ox
 
 from utils import gcj2wgs
 
 
 class Matcher:
-    def __init__(self, name, graph, bgimg=None, extent=[]):
+    def __init__(self, name, graph=None, bgimg=None, extent=[]):
         """ Base Matcher
 
         Args:
         --------
             name: a str object
-            graph: a network Graph object
+            graph: a network Graph object, download with extent from osm if None
             bgimg: background image path
             extent: [min_lon, max_lon, min_lat, max_lat]
         """
         super().__init__()
 
         self.name = f"{name}-mapmatcher"
-        self._load_graph(graph)
+        self._load_graph(graph, extent)
         self.bgimg = bgimg
         self.extent = extent
 
@@ -32,8 +33,17 @@ class Matcher:
     def __call__(self, *args, **kwds):
         return self.match_traj(*args, **kwds)
     
-    def _load_graph(self, graph):
-        self.G = graph
+    def _load_graph(self, graph, extent):
+        if graph is not None:
+            self.G = graph
+
+        if graph is None and extent:
+            assert len(extent) == 4, "Extent must be a list of 4 numbers(min_lon, max_lon, min_lat, max_lat)."
+            min_lon, max_lon, min_lat, max_lat = extent
+            self.G = ox.graph_from_bbox(max_lat, min_lat, max_lon, min_lon, network_type='drive', simplify=True)
+
+        if graph is None and len(extent) != 4:
+            raise ValueError("Please input a valid graph or a valid extent.")
 
         node_info = []
         for node, info in self.G.nodes.items():
