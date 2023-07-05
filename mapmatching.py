@@ -27,7 +27,7 @@ trips = []
 trip_info = []
 for trip, driver_id in traj_iter(traj_path, ['chengdushi_1001_1010.csv']):
     traj = [[e[1], e[0], e[2]] for e in trip]
-    res_traj = matcher.match_traj(traj, visualize=True, save_time_tag=True, segment_projected=True)
+    res_traj = matcher.match_traj(traj, visualize=False, save_time_tag=True, segment_projected=True)
     if res_traj is not None:
         res_traj = res_traj.reset_index().rename(columns={'index': 'seq_i'})
         res_traj['trip'] = num_dump

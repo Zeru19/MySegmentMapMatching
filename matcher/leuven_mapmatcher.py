@@ -66,12 +66,13 @@ class LeuvenMatcher(Matcher):
 
         # road prop is NOT CORRECT
         # TODO: CORRECT THE ROAD PROP CALCULATING
-        trip = pd.merge(trip, self.edge_info[['edge_name', 'length', 'longitude_o', 'latitude_o']], left_on='road', right_on='edge_name', how='left')
+        trip = pd.merge(trip, self.edge_info[['edge_name', 'edge', 'length', 'longitude_o', 'latitude_o']], left_on='road', right_on='edge_name', how='left')
         road_prop = [haversine(lon1, lat1, lon2, lat2) / l 
                              for lon1, lat1, lon2, lat2, l in zip(trip['longitude'], trip['latitude'], trip['longitude_o'], trip['latitude_o'], trip['length'])]
         trip['road_prop'] = np.clip(road_prop, 0, 1)
         trip['timestamp'] = pd.to_datetime(trip['timestamp'], unit='s')
-        trip = trip[['road', 'obs', 'obs_ne', 'timestamp', 'longitude', 'latitude', 'length', 'road_prop']]
+        trip = trip[['edge', 'obs', 'obs_ne', 'timestamp', 'longitude', 'latitude', 'length', 'road_prop']]
+        trip = trip.rename(columns={"edge": "road"})
 
         return nodes, trip
 
