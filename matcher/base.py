@@ -133,10 +133,12 @@ class Matcher:
         traj_lat, traj_lon = zip(*wgs_trajs)
         # ax.plot(traj_lon, traj_lat, 'r')
         ax.plot(traj_lon, traj_lat, 'r.')
-        matched_points = [(self.G.nodes[i]['y'], self.G.nodes[i]['x']) for i in matched_path]
-        matched_points_lat, matched_points_lon = zip(*matched_points)
-        ax.plot(matched_points_lon, matched_points_lat, 'g.')
-        ax.plot(matched_points_lon, matched_points_lat, 'g')
+
+        if len(matched_path) > 0:
+            matched_points = [(self.G.nodes[i]['y'], self.G.nodes[i]['x']) for i in matched_path]
+            matched_points_lat, matched_points_lon = zip(*matched_points)
+            ax.plot(matched_points_lon, matched_points_lat, 'g.')
+            ax.plot(matched_points_lon, matched_points_lat, 'g')
         
         # plt.xlim([min(traj_lon)-0.001, max(traj_lon)+0.001])
         # plt.ylim([min(traj_lat)-0.001, max(traj_lat)+0.001])

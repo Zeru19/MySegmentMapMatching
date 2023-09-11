@@ -1,10 +1,11 @@
+import math
 import numpy as np
 import pandas as pd
 from leuvenmapmatching.matcher.distance import DistanceMatcher
 from leuvenmapmatching.map.inmem import InMemMap
 
 from .base import Matcher
-from utils import wgs2gcj, haversine
+from utils import wgs2gcj, haversine, cal_angle
 
 
 class LeuvenMatcher(Matcher):
@@ -66,9 +67,11 @@ class LeuvenMatcher(Matcher):
 
         # road prop is NOT CORRECT
         # TODO: CORRECT THE ROAD PROP CALCULATING
-        trip = pd.merge(trip, self.edge_info[['edge_name', 'edge', 'length', 'longitude_o', 'latitude_o']], left_on='road', right_on='edge_name', how='left')
-        road_prop = [haversine(lon1, lat1, lon2, lat2) / l 
-                             for lon1, lat1, lon2, lat2, l in zip(trip['longitude'], trip['latitude'], trip['longitude_o'], trip['latitude_o'], trip['length'])]
+        trip = pd.merge(trip, self.edge_info[['edge_name', 'edge', 'length', 'longitude_o', 'latitude_o', 'longitude_d', 'latitude_d']], left_on='road', right_on='edge_name', how='left')
+        road_prop = [haversine(lon_o, lat_o, lon, lat) * abs(math.cos(math.radians(cal_angle(lat_o, lon_o, lat, lon) - cal_angle(lat_o, lon_o, lat_d, lon_d)))) / haversine(lon_o, lat_o, lon_d, lat_d)
+                     for lon, lat, lon_o, lat_o, lon_d, lat_d in zip(trip['longitude'], trip['latitude'], trip['longitude_o'], trip['latitude_o'], trip['longitude_d'], trip['latitude_d'])]
+        # road_prop = [haversine(lon1, lat1, lon2, lat2) / l 
+                            #  for lon1, lat1, lon2, lat2, l in zip(trip['longitude'], trip['latitude'], trip['longitude_o'], trip['latitude_o'], trip['length'])]
         trip['road_prop'] = np.clip(road_prop, 0, 1)
         trip['timestamp'] = pd.to_datetime(trip['timestamp'], unit='s')
         trip = trip[['edge', 'obs', 'obs_ne', 'timestamp', 'longitude', 'latitude', 'length', 'road_prop']]
